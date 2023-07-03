@@ -51,6 +51,7 @@ float EEPROM_float_read(int addr) // чтение из ЕЕПРОМ
 int vdu = 0;
 int wash = 0;
 int vduWait = 0;
+int washWait = 0;
 int vduEmergency = 0;
 int emergencyBreak = 0;
 
@@ -78,9 +79,9 @@ int y = 0;
 bool off = true;
 
 //флаги
-int flagTo300_500 = 1;
-int flagTo550_700 = 1;
-int flagTo750_1023 = 1;
+int flagTo580_620 = 1;
+int flagTo490_530 = 1;
+int flagTo390_430 = 1;
 int mainKey = 0;
 
 void setup() {
@@ -88,15 +89,17 @@ void setup() {
   vdu = EEPROM_float_read(0);
   wash = EEPROM_float_read(4);
   vduWait = EEPROM_float_read(8);
+  washWait = EEPROM_float_read(16);
 
   if (isnan(vdu)) { //если нет настоек по умолчанию
     //загружаем их в память
      EEPROM_float_write(0, 15);
      EEPROM_float_write(4, 4);
      EEPROM_float_write(8, 4);
-     vdu = EEPROM_float_read(0);
+  vdu = EEPROM_float_read(0);
   wash = EEPROM_float_read(4);
   vduWait = EEPROM_float_read(8);
+  washWait = EEPROM_float_read(16);
   }
   
   pinMode(joystick, OUTPUT);
@@ -141,6 +144,7 @@ void save() {
   EEPROM_float_write(0, vdu);
   EEPROM_float_write(4, wash);
   EEPROM_float_write(8, vduWait);
+  EEPROM_float_write(16, washWait);
   lcd.clear();
   lcd.setCursor (0, 0);
   lcd.print("       MODE SAVE  ");
@@ -154,10 +158,9 @@ void save() {
 
 void loop() {
   x = analogRead(dat1);
-  y = analogRead(dat1);
   lcd.setCursor(1,0);
-  lcd.print(y);
-  Serial.println(y);
+  lcd.print(x);
+  Serial.println(x);
 
 if (digitalRead(stopButton) == 1 || emergencyBreak == 1){
   emergencyBreak = 0;
@@ -175,9 +178,9 @@ if (digitalRead(stopButton) == 1 || emergencyBreak == 1){
   lcd.setCursor(12,2);
   lcd.print("BUTTON");
   delay(1000);
-  flagTo300_500 = 1;
-  flagTo550_700 = 0;
-  flagTo750_1023 = 0;
+  flagTo580_620 = 1;
+  flagTo490_530 = 0;
+  flagTo390_430 = 0;
   set = 0;
   lcd.clear();
 } 
@@ -190,7 +193,7 @@ if (digitalRead(pin_Btn) == 0 && knopka_a == 0) { // нажата ли кноп�
       knopka_a = 1;
       set = set + 1; //перебираем меню
       lcd.clear();
-if (set > 3) { //Задействован один из режимов защиты, а этой кнопкой мы его вырубаем. (или мы просто дошли до конца меню)
+if (set > 4) { //Задействован один из режимов защиты, а этой кнопкой мы его вырубаем. (или мы просто дошли до конца меню)
         off = false;
         save();
         set = 0;//выходим из меню
@@ -210,15 +213,15 @@ if (digitalRead(startButton) == 0 && digitalRead(stopButton) == 0 || mainKey == 
   digitalWrite(greenButton, LOW);
   digitalWrite(redButton, HIGH);
 
-if (x >= 300 && x < 500 && flagTo300_500 == 1){  // едем к вду
-  flagTo300_500 = 0;
+if (x >= 580 && x < 620 && flagTo580_620 == 1){  // едем к вду
+  flagTo580_620 = 0;
   lcd.clear();
   digitalWrite(R4, HIGH);
-  flagTo550_700 = 1;
+  flagTo490_530 = 1;
 }
 
-if (x >= 300 && x < 500 && flagTo300_500 == 2){
-  flagTo300_500 = 0;
+if (x >= 580 && x < 620 && flagTo580_620 == 2){
+  flagTo580_620 = 1;
   lcd.clear();
   digitalWrite(R3, LOW);
   delay(1000);
@@ -226,7 +229,7 @@ if (x >= 300 && x < 500 && flagTo300_500 == 2){
   delay(1000);
   digitalWrite(R2, HIGH);
   int washingTime = 0;
-  for (washingTime = 0; washingTime < wash; washingTime ++){
+  for (washingTime = 0; washingTime < wash; washingTime++){
     if (digitalRead(stopButton) == 1){
       emergencyBreak = 1;
       break;
@@ -237,13 +240,25 @@ if (x >= 300 && x < 500 && flagTo300_500 == 2){
     lcd.print("MOVING DOWN");
     delay(1000);
   }
-  delay(2000);
   digitalWrite(R2, LOW);
-  delay(1000);
+
+  int washWaitTimer = 0;
+  for (washWaitTimer = 0; washWaitTimer < washWait; washWaitTimer++){
+    if (digitalRead(stopButton) == 1){
+      emergencyBreak = 1;
+      break;
+    }
+    lcd.setCursor(3, 2);
+    lcd.print("WASHING");
+    lcd.setCursor(4, 3);
+    lcd.print("BOTTON POSITION");
+    delay(1000);
+  }
+
   digitalWrite(R1, HIGH);
   lcd.clear();
   washingTime = 0;
-  for (washingTime = 0; washingTime < wash; washingTime ++){
+  for (washingTime = 0; washingTime < wash; washingTime++){
     if (digitalRead(stopButton) == 1){
       emergencyBreak = 1;
       break;
@@ -255,9 +270,7 @@ if (x >= 300 && x < 500 && flagTo300_500 == 2){
     delay(1000);
   }
   lcd.clear();
-  lcd.clear();
   digitalWrite(R1, LOW);
-  delay(1000);
   digitalWrite(R6, LOW);
   lcd.clear();
   digitalWrite(R3, LOW);
@@ -265,9 +278,9 @@ if (x >= 300 && x < 500 && flagTo300_500 == 2){
   mainKey = 0;
 }
 
-if (x >= 550 && x < 700 && flagTo550_700 == 1){ // работает вду и начало движения в сторону наколнной плоскости
-  flagTo300_500 = 2;
-  flagTo550_700 = 0;
+if (x >= 490 && x < 520 && flagTo490_530 == 1){ // работает вду и начало движения в сторону наколнной плоскости
+  flagTo580_620 = 2;
+  flagTo490_530 = 0;
   lcd.clear(); 
   digitalWrite(R4, LOW);
   delay(1000);
@@ -275,20 +288,20 @@ if (x >= 550 && x < 700 && flagTo550_700 == 1){ // работает вду и н
   delay(1000);
   digitalWrite(R2, HIGH);
   int vduWashingTime = 0;
-  for (vduWashingTime = 0; vduWashingTime < vdu; vduWashingTime ++){
+  for (vduWashingTime = 0; vduWashingTime < vdu; vduWashingTime++){
     if (digitalRead(stopButton) == 1){
       emergencyBreak = 1;
       break;
     }
-    lcd.setCursor(4, 2);
+    lcd.setCursor(4, 2); 
     lcd.print("VDU WORKING");
-    delay(1000);
+    delay(500);
   }
   lcd.clear();
   digitalWrite(R2, LOW);
 
   int vduWaitTimer = 0;
-  for (vduWaitTimer = 0; vduWaitTimer < vduWait; vduWaitTimer ++){
+  for (vduWaitTimer = 0; vduWaitTimer < vduWait; vduWaitTimer++){
     if (digitalRead(stopButton) == 1){
       emergencyBreak = 1;
       break;
@@ -307,7 +320,7 @@ if (x >= 550 && x < 700 && flagTo550_700 == 1){ // работает вду и н
   lcd.clear();
   vduWashingTime = 0;
 
-  for (vduWashingTime = 0; vduWashingTime < vdu; vduWashingTime ++){
+  for (vduWashingTime = 0; vduWashingTime < vdu; vduWashingTime++){
     if (digitalRead(stopButton) == 1){
       emergencyBreak = 1;
       break;
@@ -318,7 +331,6 @@ if (x >= 550 && x < 700 && flagTo550_700 == 1){ // работает вду и н
   }
   lcd.clear();
   digitalWrite(R1, LOW);
-  delay(1000);
   digitalWrite(R4, HIGH);
   lcd.setCursor(8, 2);
   lcd.print("-");
@@ -329,12 +341,12 @@ if (x >= 550 && x < 700 && flagTo550_700 == 1){ // работает вду и н
   lcd.setCursor(11, 2);
   lcd.print(">");
   lcd.clear();
-  flagTo750_1023 = 1;
+  flagTo390_430 = 1;
 }
 
-if (x >= 750 && x <= 1023 && flagTo750_1023 == 1){
-  flagTo750_1023 = 0;
-  flagTo300_500 = 2;
+if (x >= 390 && x <= 430 && flagTo390_430 == 1){
+  flagTo390_430 = 0;
+  flagTo580_620 = 2;
   lcd.clear(); // лежит на наклонной плоскости, затем двигается к мойке
   digitalWrite(R4, LOW);
   lcd.setCursor(6, 2);
@@ -356,12 +368,12 @@ if (x >= 750 && x <= 1023 && flagTo750_1023 == 1){
 
 if (set == 1){
   lcd.setCursor(0,3);
-  lcd.print("VDU Wash time:");
-  lcd.setCursor(14,3);
+  lcd.print("VDU UP/DOWN time:");
+  lcd.setCursor(17,3);
   lcd.print(vdu);
   digitalWrite(greenButton, LOW);
   if ( vdu < 10 ){
-  lcd.setCursor(15,3);
+  lcd.setCursor(18,3);
   lcd.print("  ");
   }
 }
@@ -369,11 +381,11 @@ if (set == 1){
 if (set == 2){
   digitalWrite(greenButton, LOW);
   lcd.setCursor(0,3);
-  lcd.print("Wash time:");
-  lcd.setCursor(10,3);
+  lcd.print("Wash UP/DOWN time:");
+  lcd.setCursor(18,3);
   lcd.print(wash);
   if ( wash < 10 ){
-  lcd.setCursor(11,3);
+  lcd.setCursor(19,3);
   lcd.print(" ");
   }
 }
@@ -381,11 +393,23 @@ if (set == 2){
 if (set == 3){
   digitalWrite(greenButton, LOW);
   lcd.setCursor(0,3);
-  lcd.print("VDU waiting time:");
-  lcd.setCursor(17,3);
+  lcd.print("VDU work time:");
+  lcd.setCursor(15,3);
   lcd.print(vduWait);
   if ( vduWait < 10 ){
-    lcd.setCursor(18,3);
+    lcd.setCursor(16,3);
+  lcd.print(" ");
+  }
+}
+
+if (set == 4){
+  digitalWrite(greenButton, LOW);
+  lcd.setCursor(0,3);
+  lcd.print("Wash work time:");
+  lcd.setCursor(16,3);
+  lcd.print(washWait);
+  if ( washWait < 10 ){
+    lcd.setCursor(17,3);
   lcd.print(" ");
   }
 }
@@ -433,6 +457,22 @@ switch (GetEncoderState()) {
       }  
       }
 }
+
+if (set == 4){
+switch (GetEncoderState()) {
+    case eNone: return;
+    case eLeft: {   // Энкодер вращается влево
+        washWait--;
+        break;
+      }
+    case eRight: {  // Энкодер вращается вправо 
+        washWait++;      
+        break;
+      }  
+      }
+}
+
+
 
 if ( wash < 0 ){
   wash = 0;
