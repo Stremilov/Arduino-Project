@@ -1,4 +1,4 @@
 # Arduino-Project
 Программа для автоматизации производственного процесса электропассивации и мойки нержавеющих деталей.
-Cсылка на демонстрацию работы программы - https://disk.yandex.ru/i/7GX0KDn6-wijmw
+Cсылка на демонстрацию работы программы - https://disk.yandex.ru/i/7GX0KDn6-wijmw          
 Процесс программирования - https://disk.yandex.ru/i/TmzQjqliZzoB3g
